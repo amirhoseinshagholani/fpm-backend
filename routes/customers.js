@@ -63,7 +63,6 @@ router.get('/getAllCustomers', async (req, res) => {
     });
 });
 
-
 router.post('/updateCustomerList', async (req, res) => {
     if (!req.headers["authorization"]) {
         res.json({

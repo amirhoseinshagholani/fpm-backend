@@ -53,6 +53,35 @@ router.post('/getCustomersInvoicesTotalPayment', async (req, res) => {
     });
 });
 
+router.get('/getInvoicesTotalPayment', async (req, res) => {
+    if (!req.headers["authorization"]) {
+        res.json({
+            success: false,
+            data: "Token is required",
+        });
+        return false;
+    }
+
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    jwt.verify(token, secretKey, (err, result) => {
+        conn.query(`select IFNULL(sum(amount),0)as total_payments from payments WHERE status='2'`, (err, result) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    message: err
+                });
+                return false;
+            }
+            res.json({
+                success: true,
+                data: result
+            })
+        })
+    });
+});
+
 router.post('/getCustomersInvoicesPayment', async (req, res) => {
     if (!req.headers["authorization"]) {
         res.json({
@@ -107,6 +136,35 @@ router.post('/getCustomersInvoicesPayment', async (req, res) => {
         });
     }
 
+});
+
+router.get('/getCountPayments', async (req, res) => {
+    if (!req.headers["authorization"]) {
+        res.json({
+            success: false,
+            data: "Token is required",
+        });
+        return false;
+    }
+
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    jwt.verify(token, secretKey, (err, result) => {
+        conn.query(`select count(*) from invoices`, (err, result) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    message: err
+                });
+                return false;
+            }
+            res.json({
+                success: true,
+                data: result
+            })
+        })
+    });
 });
 
 
