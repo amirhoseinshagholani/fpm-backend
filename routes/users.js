@@ -16,6 +16,10 @@ const conn = mysql.createConnection({
 })
 conn.connect();
 
+router.get('/test', async (req, res) => {
+	res.json({data:"this is test"});
+});
+
 router.get('/getAllUsers', async (req, res) => {
     if (!req.headers["authorization"]) {
         res.json({

@@ -206,5 +206,45 @@ router.post('/updateCustomerList', async (req, res) => {
     });
 });
 
+router.get('/getCountCustomers', async (req, res) => {
+    if (!req.headers["authorization"]) {
+        res.json({
+            success: false,
+            data: "Token is required",
+        });
+        return;
+    }
+
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    jwt.verify(token, secretKey, (err, result) => {
+        if (err) {
+            return res.json({
+                success: false,
+                message: "توکن نامعتبر است"
+            });
+        }
+
+        const query = `
+            SELECT count(*) AS countCustomers FROM customers;
+        `;
+
+        conn.query(query, (err, result) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    message: err
+                });
+                return;
+            }
+
+            res.json({
+                success: true,
+                data: result
+            });
+        });
+    });
+});
 
 export default router;

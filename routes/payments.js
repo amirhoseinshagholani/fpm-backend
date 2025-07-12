@@ -2,6 +2,7 @@ import express from "express";
 import jwt, { decode } from 'jsonwebtoken';
 import mysql from 'mysql2';
 import dotenv from 'dotenv';
+import { getToday } from "../assets/functions.js";
 
 dotenv.config();
 
@@ -104,7 +105,7 @@ router.post('/getCustomersInvoicesPayment', async (req, res) => {
 
     if (accounting_code == "00") {
         jwt.verify(token, secretKey, (err, result2) => {
-            conn.query(`select * from payments`, (err, result) => {
+            conn.query(`select * from payments order by id desc`, (err, result) => {
                 if (err) {
                     res.json({
                         success: false,
@@ -120,7 +121,7 @@ router.post('/getCustomersInvoicesPayment', async (req, res) => {
         });
     } else {
         jwt.verify(token, secretKey, (err, result2) => {
-            conn.query(`select * from payments WHERE customer_accounting_code=${accounting_code}`, (err, result) => {
+            conn.query(`select * from payments WHERE customer_accounting_code=${accounting_code} order by id desc`, (err, result) => {
                 if (err) {
                     res.json({
                         success: false,
@@ -151,7 +152,7 @@ router.get('/getCountPayments', async (req, res) => {
     const token = authHeader && authHeader.split(" ")[1];
 
     jwt.verify(token, secretKey, (err, result) => {
-        conn.query(`select count(*) from invoices`, (err, result) => {
+        conn.query(`select count(*) as countPayments from payments where status=2`, (err, result) => {
             if (err) {
                 res.json({
                     success: false,
@@ -167,5 +168,91 @@ router.get('/getCountPayments', async (req, res) => {
     });
 });
 
+router.get("/getPayment", (req, res) => {
+    const key = req.query.key;
+    const tracking_code = req.query.tracking_code;
+
+    if (!key) {
+        return res.status(400).json("key is null!");
+    }
+
+    if (key != '123456abcabc') {
+        return res.status(400).json("key is wrong!");
+    }
+
+    if (!tracking_code) {
+        return res.status(400).json("tracking_code is null!");
+    }
+    conn.query(`select * from payments where tracking_code=${tracking_code}`, (err, result) => {
+        if (err) {
+            res.json({
+                success: false,
+                message: err
+            });
+            return false;
+        }
+        res.json({
+            success: true,
+            data: result
+        })
+    })
+
+});
+
+router.post("/updatePaymentToken", async (req, res) => {
+    const tracking_code = req.body.tracking_code;
+    const token = req.body.token;
+
+    if (!tracking_code) {
+        return res.json({ success: false, message: "Tracking Code is required" });
+    }
+    if (!token) {
+        return res.json({ success: false, message: "Token is required" });
+    }
+
+    const today = getToday();
+    
+    const updateQuery = `UPDATE payments SET token = ?, updated_at = ? WHERE tracking_code = ?`;
+    const updateValues = [token, today, tracking_code];
+
+    try {
+        conn.query(updateQuery, updateValues, async (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.json({ success: false, message: "خطا در بروزرسانی توکن پرداخت" });
+            }
+            res.json({ success: true, message: "توکن پرداخت با موفقیت به روز شد" });
+        });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false, message: "بروزرسانی انجام نشد، لطفا مجدد امتحان کنید" });
+    }
+});
+
+router.post("/callback", async (req, res) => {
+
+    const tracking_code = req.body.tracking_code;
+
+    if (!tracking_code) {
+        return res.json({ success: false, message: "tracking_code is required" });
+    }
+
+    const today = getToday();
+    const updateQuery = `UPDATE payments SET status = '2', updated_at = ? WHERE tracking_code = ?`;
+    const updateValues = [today, tracking_code];
+
+    try {
+        conn.query(updateQuery, updateValues, async (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.json({ success: false, message: "خطا در بروزرسانی وضعیت پرداخت" });
+            }
+            res.json({ success: true, message: "وضعیت پرداخت با موفقیت به روز شد" });
+        });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: false, message: "بروزرسانی انجام نشد، لطفا مجدد امتحان کنید" });
+    }
+});
 
 export default router;

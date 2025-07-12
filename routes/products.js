@@ -27,7 +27,7 @@ router.get('/getAllProducts', async (req, res) => {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
     jwt.verify(token, secretKey, (err, result) => {
-        conn.query("SELECT * FROM products", (err, result) => {
+        conn.query("SELECT * FROM products order by id desc", (err, result) => {
             if (err) {
                 res.json({
                     success: false,

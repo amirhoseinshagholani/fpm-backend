@@ -83,7 +83,7 @@ router.post("/login", (req, res) => {
                 }
 
                 if (result?.length) {
-                    token = jwt.sign({id:result[0].id,username:result[0].username},secretKey,{
+                    token = jwt.sign({id:result[0].id,username:result[0].username,accounting_code:result[0].accounting_code},secretKey,{
                         expiresIn:"24h"
                     })
                     if(token){
