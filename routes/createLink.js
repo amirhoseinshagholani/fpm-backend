@@ -138,8 +138,8 @@ router.post("/sendLink", async (req, res) => {
     return res.json({ success: false, message: "Token is required" });
   }
 
-  // const link = req.body.link;
-  const link="test";
+  const link = req.body.link;
+  // const link = "test";
   // const tracking_code = req.body.tracking_code;
 
   if (!link) {
@@ -156,6 +156,27 @@ router.post("/sendLink", async (req, res) => {
     if (!name || !username || !mobile || !amount || !tracking_code) {
       return res.json({ success: false, message: "نام مشتری، نام کاربری، شماره موبایل، کد پیگیری و مبلغ الزامی هستند" });
     }
+    let customerName = "";
+    try {
+      const selectQuery = "select * from customers where accounting_code=?";
+      const value = [accounting_code];
+      conn.query(selectQuery, value, async (err, results) => {
+        if (err) {
+          return res.json({ success: false, message: "خطا در دریافت اطلاعات" });
+        }
+        if (results.length === 0) {
+          return res.json({ success: false, message: "مشتری پیدا نشد" });
+        }
+
+        customerName = results[0].title;
+        customerName = customerName.replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+        customerName = customerName.replace(/^(جناب\s*آقای|سرکار\s*خانم|آق[ایي]|خانم)\s*/u, '');
+        customerName = customerName.replace(/\s*\(.*?\)\s*/g, '');
+        customerName = customerName.trim();
+      });
+    } catch (err) {
+      return res.json({ success: false, message: "خطای سرور" });
+    }
 
     const today = getToday();
     const insertQuery = `INSERT INTO payments 
@@ -171,8 +192,8 @@ router.post("/sendLink", async (req, res) => {
           return res.json({ success: false, message: "خطا در ثبت در دیتابیس" });
         }
 
-        const message = `${name} عزیز\nباسلام. مبلغ قابل پرداخت برای شما ${amount} ریال می‌باشد.\nلینک پرداخت:\n ${link}\nبهین کارا درمان`;
-
+        // const message = `${name} عزیز\nباسلام. مبلغ قابل پرداخت برای شما ${amount} ریال می‌باشد.\nلینک پرداخت:\n ${link}\nبهین کارا درمان`;
+        const message = `${name} عزیز\nباسلام. مبلغ قابل پرداخت برای شما ${amount} ریال می‌باشد.\nلینک پرداخت:\n ${link}\n${customerName}`;
         try {
           await sendSMS(mobile, message);
           res.json({

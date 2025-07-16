@@ -105,7 +105,7 @@ router.post('/getCustomersInvoicesPayment', async (req, res) => {
 
     if (accounting_code == "00") {
         jwt.verify(token, secretKey, (err, result2) => {
-            conn.query(`select * from payments order by id desc`, (err, result) => {
+            conn.query(`select payments.*,customers.title as customer_title from payments join customers on payments.customer_accounting_code = customers.accounting_code order by id desc`, (err, result) => {
                 if (err) {
                     res.json({
                         success: false,
@@ -199,6 +199,37 @@ router.get("/getPayment", (req, res) => {
 
 });
 
+router.get("/getPaymentTrackingCode", (req, res) => {
+    const key = req.query.key;
+    const token = req.query.token;
+
+    if (!key) {
+        return res.status(400).json("key is null!");
+    }
+
+    if (key != '123456abcabc') {
+        return res.status(400).json("key is wrong!");
+    }
+
+    if (!token) {
+        return res.status(400).json("token is null!");
+    }
+    conn.query(`select id,token,tracking_code from payments where token='${token}'`, (err, result) => {
+        if (err) {
+            res.json({
+                success: false,
+                message: err
+            });
+            return false;
+        }
+        res.json({
+            success: true,
+            data: result
+        })
+    })
+
+});
+
 router.post("/updatePaymentToken", async (req, res) => {
     const tracking_code = req.body.tracking_code;
     const token = req.body.token;
@@ -211,7 +242,7 @@ router.post("/updatePaymentToken", async (req, res) => {
     }
 
     const today = getToday();
-    
+
     const updateQuery = `UPDATE payments SET token = ?, updated_at = ? WHERE tracking_code = ?`;
     const updateValues = [token, today, tracking_code];
 

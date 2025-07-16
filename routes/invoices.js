@@ -27,7 +27,7 @@ router.get('/getAllInvoices', async (req, res) => {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
     jwt.verify(token, secretKey, (err, result) => {
-        conn.query("select invoices.*,customers.title as customer_title from invoices join customers on invoices.customer_accounting_code=customers.accounting_code", (err, result) => {
+        conn.query("select invoices.*,customers.title as customer_title from invoices join customers on invoices.customer_accounting_code=customers.accounting_code order by id desc", (err, result) => {
             if (err) {
                 res.json({
                     success: false,
